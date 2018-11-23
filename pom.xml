@@ -12,11 +12,11 @@
   </properties>
 
   <dependencies>
+
 	<dependency>
-	    <groupId>io.netty</groupId>
-	    <artifactId>netty-all</artifactId>
-	    <version>5.0.0.Alpha1</version>
-	   <!--  <version>4.1.31.Final</version> -->
+	    <groupId>org.kk</groupId>
+	    <artifactId>cheetah-common</artifactId>
+	    <version>0.0.1-SNAPSHOT</version>
 	</dependency>
   </dependencies>
 </project>
