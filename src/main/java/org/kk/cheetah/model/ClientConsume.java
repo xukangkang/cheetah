@@ -1,5 +1,6 @@
 package org.kk.cheetah.model;
 
+import org.kk.cheetah.common.model.request.ConsumerRecordRequest;
 import org.kk.cheetah.common.model.response.ConsumerRecord;
 import org.kk.cheetah.common.model.response.ConsumerRecords;
 import org.slf4j.Logger;
@@ -18,9 +19,10 @@ public class ClientConsume {
 
     }
 
-    public ConsumerRecords getConsumerRecords(int maxNum) {
+    public ConsumerRecords getConsumerRecords(ConsumerRecordRequest consumerRecordRequest) {
         ConsumerRecords consumerRecords = new ConsumerRecords();
-        for (int index = 0; index < maxNum; index++) {
+        consumerRecords.setOnlyTag(consumerRecordRequest.getPollTag());
+        for (int index = 0; index < consumerRecordRequest.getMaxPollNum(); index++) {
             ConsumerRecord consumerRecord = null;
             if ((consumerRecord = recordRead.readRecord()) == null) {
                 return consumerRecords;

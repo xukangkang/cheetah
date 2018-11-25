@@ -1,9 +1,11 @@
 package org.kk.cheetah.handler;
 
-import java.io.FileOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.kk.cheetah.common.model.request.ClientRequest;
 import org.kk.cheetah.common.model.request.ConsumerRecordRequest;
@@ -22,22 +24,22 @@ public class ConsumerRecordRequestHandler extends AbstractHandler {
 
     private String dataFilePath = "E:\\cheetah-file\\data.txt";
 
-    private Map<ConsumerRecordRequest, ClientConsume> clientConsumeMap = new ConcurrentHashMap<>();
+    private Map<ConsumerRecordRequest, ClientConsume> clientConsumeMap = new ConcurrentHashMap<ConsumerRecordRequest, ClientConsume>();
 
-    @Override
+    private AtomicLong al = new AtomicLong();
     public boolean support(ClientRequest clientRequest) {
         return clientRequest instanceof ConsumerRecordRequest;
     }
 
-    @Override
     public void handle(ClientRequest clientRequest, ChannelHandlerContext ctx) {
         if (logger.isDebugEnabled()) {
-            logger.debug("handle", clientRequest);
+            logger.debug("handle ->收到请求, 第  {} 条消息,clientRequest:{}",al.incrementAndGet(), clientRequest);
         }
+        
         ConsumerRecordRequest consumerRecordRequest = (ConsumerRecordRequest) clientRequest;
-        logger.debug("handle -> 收到请求:{}", consumerRecordRequest);
+        ConsumerRecords consumerRecords = getConsumerRecords(consumerRecordRequest);
         //发送响应
-        ctx.writeAndFlush(getConsumerRecords(consumerRecordRequest));
+        ctx.writeAndFlush(consumerRecords);
     }
 
     private ConsumerRecords getConsumerRecords(ConsumerRecordRequest consumerRecordRequest) {
@@ -48,21 +50,8 @@ public class ConsumerRecordRequestHandler extends AbstractHandler {
             clientConsume = clientConsumeMap.get(consumerRecordRequest);
         }
 
-        return clientConsume.getConsumerRecords(consumerRecordRequest.getMaxPollNum());
+        return clientConsume.getConsumerRecords(consumerRecordRequest);
     }
 
-    private void writeFile(ConsumerRecord consumerRecord) {
-        MessagePack msgpack = new MessagePack();
-        try {
-            byte[] raw = msgpack.write(consumerRecord);
-            FileOutputStream fos = new FileOutputStream(dataFilePath, true);
-            fos.write(raw);
-            fos.write('\r');
-            fos.flush();
-            fos.close();
-        } catch (IOException e) {
-            logger.error("writeFile", e);
-        }
-    }
 
 }

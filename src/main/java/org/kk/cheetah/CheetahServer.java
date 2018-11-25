@@ -27,7 +27,10 @@ public class CheetahServer {
         }
         new CheetahServer().bind(port);
     }
-
+    public void start(){
+        int port = 9997;
+        bind(port);
+    }
     public void bind(int port) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
