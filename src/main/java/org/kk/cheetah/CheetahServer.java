@@ -33,6 +33,9 @@ public class CheetahServer {
     }
 
     public void start() {
+        if (logger.isInfoEnabled()) {
+            logger.info("server启动中......");
+        }
         try {
             init();
         } catch (IOException e) {
@@ -45,6 +48,9 @@ public class CheetahServer {
             logger.info("start -> backlog:{}", ServerConfig.backlog);
         }
         bind(port);
+        if (logger.isInfoEnabled()) {
+            logger.info("server启动完成");
+        }
     }
 
     private void init() throws IOException {
