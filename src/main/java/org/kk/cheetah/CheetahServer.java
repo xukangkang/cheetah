@@ -1,8 +1,12 @@
 package org.kk.cheetah;
 
+import java.io.IOException;
+
 import org.kk.cheetah.common.serializable.MarshallingCodeCFactory;
+import org.kk.cheetah.config.ServerConfig;
 import org.kk.cheetah.handler.ProducerRecordRequestHandler;
 import org.kk.cheetah.nettyhandler.NettyServerHandler;
+import org.kk.cheetah.zookeeper.ZKMetadataHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,10 +31,27 @@ public class CheetahServer {
         }
         new CheetahServer().bind(port);
     }
-    public void start(){
+
+    public void start() {
+        try {
+            init();
+        } catch (IOException e) {
+            logger.error("start", e);
+            return;
+        }
         int port = 9997;
+        if (logger.isInfoEnabled()) {
+            logger.info("start -> port:{}", port);
+            logger.info("start -> backlog:{}", ServerConfig.backlog);
+        }
         bind(port);
     }
+
+    private void init() throws IOException {
+        ServerConfig.init();
+        ZKMetadataHandler.init();
+    }
+
     public void bind(int port) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -38,7 +59,7 @@ public class CheetahServer {
         serverBootstrap
                 .group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
-                .option(ChannelOption.SO_BACKLOG, 1024)
+                .option(ChannelOption.SO_BACKLOG, ServerConfig.backlog)
                 .childHandler(new ChildChannelHandler());
         try {
             serverBootstrap.bind(port).sync();

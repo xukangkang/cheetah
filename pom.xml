@@ -18,5 +18,10 @@
 	    <artifactId>cheetah-common</artifactId>
 	    <version>0.0.1-SNAPSHOT</version>
 	</dependency>
+	<dependency>
+	    <groupId>com.101tec</groupId>
+	    <artifactId>zkclient</artifactId>
+	    <version>0.11</version>
+	</dependency>
   </dependencies>
 </project>

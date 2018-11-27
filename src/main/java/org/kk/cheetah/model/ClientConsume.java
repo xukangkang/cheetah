@@ -11,18 +11,18 @@ public class ClientConsume {
     private String group;
     private String clientId;
     private long offset;
-
     private RecordRead recordRead;
 
-    public ClientConsume(long offset) {
-        recordRead = new RecordRead(offset);
+    public ClientConsume(long offset, String topic) {
+        this.offset = offset;
+        recordRead = new RecordRead(offset, topic);
 
     }
 
     public ConsumerRecords getConsumerRecords(ConsumerRecordRequest consumerRecordRequest) {
         ConsumerRecords consumerRecords = new ConsumerRecords();
         consumerRecords.setOnlyTag(consumerRecordRequest.getPollTag());
-        for (int index = 0; index < consumerRecordRequest.getMaxPollNum(); index++) {
+        for (int index = 0; index < consumerRecordRequest.getMaxPollNum(); index++, offset++) {
             ConsumerRecord consumerRecord = null;
             if ((consumerRecord = recordRead.readRecord()) == null) {
                 return consumerRecords;
