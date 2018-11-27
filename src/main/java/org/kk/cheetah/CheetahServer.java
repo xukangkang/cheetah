@@ -20,6 +20,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 public class CheetahServer {
     private Logger logger = LoggerFactory.getLogger(ProducerRecordRequestHandler.class);
+    private int port = 9997;
 
     public static void main(String[] args) {
         int port = 9997;
@@ -35,6 +36,8 @@ public class CheetahServer {
     public void start() {
         if (logger.isInfoEnabled()) {
             logger.info("server启动中......");
+            logger.info("start -> port:{}", port);
+            logger.info("start -> backlog:{}", ServerConfig.backlog);
         }
         try {
             init();
@@ -42,11 +45,7 @@ public class CheetahServer {
             logger.error("start", e);
             return;
         }
-        int port = 9997;
-        if (logger.isInfoEnabled()) {
-            logger.info("start -> port:{}", port);
-            logger.info("start -> backlog:{}", ServerConfig.backlog);
-        }
+
         bind(port);
         if (logger.isInfoEnabled()) {
             logger.info("server启动完成");
