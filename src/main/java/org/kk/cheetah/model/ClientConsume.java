@@ -10,7 +10,7 @@ public class ClientConsume {
     private Logger logger = LoggerFactory.getLogger(ClientConsume.class);
     private String group;
     private String clientId;
-    private long offset;
+    private volatile long offset;
     private RecordRead recordRead;
 
     public ClientConsume(long offset, String topic) {
@@ -19,7 +19,8 @@ public class ClientConsume {
 
     }
 
-    public ConsumerRecords getConsumerRecords(ConsumerRecordRequest consumerRecordRequest) {
+    //同步，防止并发访问时读文件出错
+    public synchronized ConsumerRecords getConsumerRecords(ConsumerRecordRequest consumerRecordRequest) {
         ConsumerRecords consumerRecords = new ConsumerRecords();
         consumerRecords.setOnlyTag(consumerRecordRequest.getPollTag());
         for (int index = 0; index < consumerRecordRequest.getMaxPollNum(); index++, offset++) {

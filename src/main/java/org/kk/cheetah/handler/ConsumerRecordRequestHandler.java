@@ -3,6 +3,7 @@ package org.kk.cheetah.handler;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.kk.cheetah.common.model.request.ClientRequest;
 import org.kk.cheetah.common.model.request.ConsumerRecordRequest;
@@ -41,14 +42,16 @@ public class ConsumerRecordRequestHandler extends AbstractHandler {
         ctx.writeAndFlush(consumerRecords);
     }
 
+    //ThreadSafe
     private ConsumerRecords getConsumerRecords(ConsumerRecordRequest consumerRecordRequest) {
         ClientConsume clientConsume = null;
         //根据消费者信息得到offset，如果没有对应的offset，则返回null，
         String offsetKey = buildConsumerOffsetKey(consumerRecordRequest);
         Object data = null;
+        ClientConsume firstOldClientConsume = null;
         Long offset = (data = ZKMetadataHandler.getData(offsetKey)) == null ? null : Long.valueOf(data.toString());
         if (!clientConsumeMap.containsKey(consumerRecordRequest)) {
-            //如果offset为null，则创建一个offsetKey，值offset初始化为0
+            //如果offset为null，则创建一个offsetKey，offset初始化为0
             if (offset == null) {
                 if (!existTopic(consumerRecordRequest.getTopic())) {
                     ConsumerRecords consumerRecords = new ConsumerRecords();
@@ -57,16 +60,29 @@ public class ConsumerRecordRequestHandler extends AbstractHandler {
                     return consumerRecords;
                 }
                 offset = 0l;
-                ZKMetadataHandler.createPersistent(offsetKey, offset);
             }
-            clientConsumeMap.put(consumerRecordRequest,
+            firstOldClientConsume = clientConsumeMap.putIfAbsent(consumerRecordRequest,
                     clientConsume = new ClientConsume(offset, consumerRecordRequest.getTopic()));
+            if (firstOldClientConsume == null) {
+                ZKMetadataHandler.createPersistent(offsetKey, offset);
+            } else {
+                clientConsume = firstOldClientConsume;
+            }
         } else {
             clientConsume = clientConsumeMap.get(consumerRecordRequest);
         }
+        if (firstOldClientConsume != null) {
+            while (!ZKMetadataHandler.exist(offsetKey)) {
+                try {
+                    TimeUnit.MICROSECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    logger.error("getConsumerRecords", e);
+                }
+            }
+        }
         ConsumerRecords consumerRecords = clientConsume.getConsumerRecords(consumerRecordRequest);
         //更新offset
-        ZKMetadataHandler.update(offsetKey, offset + consumerRecords.getConsumberRecords().size());
+        ZKMetadataHandler.update(offsetKey, clientConsume.getOffset());
         return consumerRecords;
     }
 

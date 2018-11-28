@@ -51,6 +51,10 @@ public class ZKMetadataHandler {
         zkc.writeData(key, value);
     }
 
+    public static boolean exist(String key) {
+        return zkc.exists(key);
+    }
+
     public static void update(String key, Object value) {
         zkc.writeData(key, value);
     }
