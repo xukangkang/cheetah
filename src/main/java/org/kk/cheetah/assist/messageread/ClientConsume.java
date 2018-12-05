@@ -1,4 +1,4 @@
-package org.kk.cheetah.model;
+package org.kk.cheetah.assist.messageread;
 
 import org.kk.cheetah.common.model.request.ConsumerRecordRequest;
 import org.kk.cheetah.common.model.response.ConsumerRecord;
@@ -23,6 +23,7 @@ public class ClientConsume {
     public synchronized ConsumerRecords getConsumerRecords(ConsumerRecordRequest consumerRecordRequest) {
         ConsumerRecords consumerRecords = new ConsumerRecords();
         consumerRecords.setOnlyTag(consumerRecordRequest.getPollTag());
+        System.out.println("maxPollNum " + consumerRecordRequest.getMaxPollNum());
         for (int index = 0; index < consumerRecordRequest.getMaxPollNum(); index++, offset++) {
             ConsumerRecord consumerRecord = null;
             if ((consumerRecord = recordRead.readRecord()) == null) {

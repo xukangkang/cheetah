@@ -23,29 +23,22 @@ public class CheetahServer {
     private int port = 9997;
 
     public static void main(String[] args) {
-        int port = 9997;
-        if (args != null && args.length > 0) {
-            try {
-                Integer.valueOf(args[0]);
-            } catch (Exception e) {
-            }
-        }
-        new CheetahServer().bind(port);
+        CheetahServer server = new CheetahServer();
+        server.start();
     }
 
     public void start() {
-        if (logger.isInfoEnabled()) {
-            logger.info("server启动中......");
-            logger.info("start -> port:{}", port);
-            logger.info("start -> backlog:{}", ServerConfig.backlog);
-        }
         try {
             init();
         } catch (IOException e) {
             logger.error("start", e);
             return;
         }
-
+        if (logger.isInfoEnabled()) {
+            logger.info("server启动中......");
+            logger.info("start -> port:{}", port);
+            logger.info("start -> backlog:{}", ServerConfig.backlog);
+        }
         bind(port);
         if (logger.isInfoEnabled()) {
             logger.info("server启动完成");

@@ -5,11 +5,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import org.kk.cheetah.assist.messageread.ClientConsume;
 import org.kk.cheetah.common.model.request.ClientRequest;
 import org.kk.cheetah.common.model.request.ConsumerRecordRequest;
 import org.kk.cheetah.common.model.response.ConsumerRecords;
 import org.kk.cheetah.config.ServerConfig;
-import org.kk.cheetah.model.ClientConsume;
 import org.kk.cheetah.zookeeper.ZKMetadataHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

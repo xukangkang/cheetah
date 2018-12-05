@@ -1,16 +1,18 @@
 package org.kk.cheetah.handler;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
+import org.kk.cheetah.assist.messagewrite.MessageWriteResult;
+import org.kk.cheetah.assist.messagewrite.MessageWriteResult.MessageWriteResultEnum;
+import org.kk.cheetah.assist.messagewrite.MessageWriter;
+import org.kk.cheetah.assist.messagewrite.QueueMessageWriter;
 import org.kk.cheetah.common.model.request.ClientRequest;
 import org.kk.cheetah.common.model.request.ProducerRecordRequest;
 import org.kk.cheetah.common.model.response.ConsumerRecord;
 import org.kk.cheetah.common.model.response.ProducerRecord;
-import org.kk.cheetah.config.ServerConfig;
+import org.kk.cheetah.serializer.MarshallingSerializer;
+import org.kk.cheetah.serializer.MessageSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,18 +22,12 @@ public class ProducerRecordRequestHandler extends AbstractHandler {
 
     private static Logger logger = LoggerFactory.getLogger(ProducerRecordRequestHandler.class);
 
-    private final static BlockingQueue<ConsumerRecord> consumerRecordQueue = new LinkedBlockingQueue<ConsumerRecord>();
-    static {
-        new Thread(new Runnable() {
+    private MessageSerializer messageSerializer;
+    private MessageWriter messageWriter;
 
-            @Override
-            public void run() {
-                ConsumerRecord consumerRecord = null;
-                while (true) {
-                    doWriteFile(consumerRecordQueue.poll());
-                }
-            }
-        }).start();
+    public ProducerRecordRequestHandler() {
+        messageSerializer = new MarshallingSerializer();
+        messageWriter = new QueueMessageWriter();
     }
 
     @Override
@@ -46,48 +42,29 @@ public class ProducerRecordRequestHandler extends AbstractHandler {
         }
         ProducerRecordRequest producerRecordRequest = (ProducerRecordRequest) clientRequest;
         logger.debug("handle -> 收到生产者请求:{}", producerRecordRequest);
-        //发送响应
-        ProducerRecord producerRecord = new ProducerRecord();
-        producerRecord.setDataId(producerRecordRequest.getDataId());
-        ctx.writeAndFlush(producerRecord);
+
         //写入磁盘
         ConsumerRecord consumerRecord = new ConsumerRecord();
         consumerRecord.setKey(producerRecordRequest.getKey());
         consumerRecord.setData(producerRecordRequest.getData());
         consumerRecord.setTopic(producerRecordRequest.getTopic());
-        writeFile(consumerRecord);
-    }
-
-    private void writeFile(ConsumerRecord consumerRecord) {
+        Future<MessageWriteResult> writeFileFuture = messageWriter.writeFile(consumerRecord);
+        ProducerRecord producerRecord = new ProducerRecord();
+        //发送响应
+        producerRecord.setDataId(producerRecordRequest.getDataId());
         try {
-            consumerRecordQueue.put(consumerRecord);
+            if (writeFileFuture.get().getResult().equals(MessageWriteResultEnum.FAIL)) {
+                producerRecord.setErrorMsg("produce message fail");
+            }
         } catch (InterruptedException e) {
-            logger.error("writeFile", e);
+            logger.error("handle", e);
+            producerRecord.setErrorMsg("produce message fail");
+        } catch (ExecutionException e) {
+            logger.error("handle", e);
+            producerRecord.setErrorMsg("produce message fail");
         }
-    }
+        ctx.writeAndFlush(producerRecord);
 
-    private static void doWriteFile(ConsumerRecord consumerRecord) {
-        if (consumerRecord == null) {
-            return;
-        }
-        //MessagePack msgpack = new MessagePack();
-        try {
-            /*           byte[] raw = msgpack.write(consumerRecord);
-            FileOutputStream fos = new FileOutputStream(dataFilePath, true);
-            fos.write(raw);
-            fos.write('\r');
-            fos.flush();
-            fos.close();*/
-            String fileName = new StringBuffer().append(ServerConfig.dataFilePath).append(consumerRecord.getTopic())
-                    .toString();
-            ObjectOutputStream nongsh = new ObjectOutputStream(
-                    new FileOutputStream(fileName, true));
-            nongsh.writeObject(consumerRecord);
-            nongsh.writeByte('\r');
-            nongsh.close();
-        } catch (IOException e) {
-            logger.error("doWriteFile", e);
-        }
     }
 
 }
